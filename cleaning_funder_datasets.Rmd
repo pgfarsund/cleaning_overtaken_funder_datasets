@@ -1,0 +1,234 @@
+---
+title: "cleaning_funder_datasets"
+author: "peter.farsund@uib.no"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+load library
+```{r}
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(stringr)
+```
+
+
+FUNDER_raw_microarthropod_core_depths_2022.csv
+```{r}
+raw <- read.csv("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_microarthropod_core_depths_2022.csv", 
+                sep = ";"); head(raw)
+
+clean <- raw %>% 
+  mutate(Site = str_to_title(Site),
+         siteID = recode(Site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre"),
+         core_depth = sub(",", ".", core_depth),
+         core_depth = as.numeric(core_depth), 
+         Block = paste0(Site, Block),
+         plotID = paste0(Block, treatment)) %>% 
+  rename(blockID = Block, 
+         core_depth_cm = core_depth) %>% 
+  select(-ID, -Site) %>% 
+  mutate(year = "2022") %>% 
+  relocate(year, siteID, blockID, treatment, plotID, core_depth_cm, comment) 
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Cleaned_data_from_Karolina_and_Morgane/FUNDER_clean_microarthropod_core_depths_2022.csv")
+```
+
+
+FUNDER_raw_microbial_soil_sample_weights_2022.xlsx
+```{r}
+raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_microbial_soil_sample_weights_2022.xlsx")
+head(raw)
+
+clean <- raw %>% 
+  mutate(siteID = recode(site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre")) %>% 
+  mutate(year = "2022") %>% 
+  select(-site, -block) %>% 
+  relocate(year, siteID, blockID, treatment, plotID, tot_wet_weight_g, comment) 
+
+head(clean)
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_microbial_soil_sample_weights_2022.csv")
+```
+
+
+FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx
+```{r}
+raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx")
+head(raw)
+
+clean <- raw %>% 
+  mutate(siteID = recode(site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre"), 
+         block = as.factor(block), 
+         native_graminoids = as.numeric(native_graminoids), 
+         graminoids_before_burying = as.numeric(graminoids_before_burying)) %>% 
+  mutate(year = "2022", .before = 1) %>% 
+  pivot_longer(cols = c(added_forbs, 
+                        added_graminoids),
+               values_to = "added", 
+               names_to = "functional_group") %>% 
+  pivot_longer(cols = c(native_forbs, 
+                        native_graminoids), 
+               values_to = "native", 
+               #names_to = "functional_group"
+               ) %>% 
+  pivot_longer(cols = c(forb_addition_site, 
+                        graminoid_addition_site), 
+               values_to = "addition_site", 
+               names_to = "functional_group")
+
+
+head(clean)
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_litter_biomass_2021.xlsx")
+```
+
+
+FUNDER_raw_beforeburrying_tea_bags_2021.xlsx
+```{r}
+raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2021.xlsx", col_types = c(rep("text", times = 5), "numeric", rep("date", times = 2))) # mind the two date columns
+str(raw)
+
+# clean
+
+clean <- raw %>% 
+  clean_names() %>% 
+  mutate(siteID = recode(site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre"),
+         blockID = paste0(site, block), 
+         plotID = paste0(site, block, treatment), 
+         tea_type = tolower(tea_type), 
+         tea_type = str_replace_all(tea_type,
+                                    c("gre" = "green", 
+                                      "hib" = "rooibos_hibiscus"))) %>% 
+  select(-site, -block) %>%
+  relocate(year, siteID, blockID, treatment, plotID, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2021.csv")
+
+clean %>% 
+  ggplot(aes(x=tea_type, y=weight_g, fill=tea_type)) + 
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.3)
+
+```
+
+
+FUNDER_raw_beforeburrying_tea_bags_2022.xlsx
+```{r}
+raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2022.xlsx", col_types = c(rep("guess", times = 6), "numeric", rep("date", times = 2))) # mind the two date columns
+head(raw)
+
+# clean
+
+clean <- raw %>% 
+  clean_names() %>% 
+  filter(!str_detect(site, "Substitu")) %>% 
+  mutate(siteID = recode(site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre"),
+         blockID = paste0(site, block), 
+         plotID = paste0(site, block, treatment),
+         year = "2022", 
+         tea_type = tolower(tea_type), 
+         tea_type = sub("roiboos", "rooibos", tea_type)) %>% 
+  select(-site, -block) %>%
+  relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv")
+```
+
+
+FUNDER_raw_beforeburrying_tea_bags_2022.xlsx
+```{r}
+raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx") # mind the two date columns
+head(raw)
+
+# clean
+
+clean <- raw %>% 
+  clean_names() %>% 
+  filter(!str_detect(site, "Substitu")) %>% 
+  mutate(siteID = recode(site, 
+                         'Gud' = "Gudmedalen",
+                         'Lav' = "Lavisdalen",
+                         'Ram' = "Rambera",
+                         'Ulv' = "Ulvehaugen",
+                         'Skj' = "Skjelingahaugen",
+                         'Alr' = "Alrust",
+                         'Arh' = "Arhelleren",
+                         'Fau' = "Fauske",
+                         'Hog' = "Hogsete",
+                         'Ovs' = "Ovstedalen",
+                         'Vik' = "Vikesland",
+                         'Ves' = "Veskre"),
+         blockID = paste0(site, block), 
+         plotID = paste0(site, block, treatment),
+         year = "2022", 
+         tea_type = tolower(tea_type), 
+         tea_type = sub("roiboos", "rooibos", tea_type)) %>% 
+  select(-site, -block) %>%
+  relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv")
+```
+
+
