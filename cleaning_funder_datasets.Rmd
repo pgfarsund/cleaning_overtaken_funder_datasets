@@ -16,8 +16,7 @@ library(stringr)
 
 FUNDER_raw_microarthropod_core_depths_2022.csv
 ```{r}
-raw <- read.csv("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_microarthropod_core_depths_2022.csv", 
-                sep = ";"); head(raw)
+raw <- read.csv("../Raw/FUNDER_raw_microarthropod_core_depths_2022.csv", sep = ";"); head(raw)
 
 clean <- raw %>% 
   mutate(Site = str_to_title(Site),
@@ -44,13 +43,13 @@ clean <- raw %>%
   mutate(year = "2022") %>% 
   relocate(year, siteID, blockID, treatment, plotID, core_depth_cm, comment) 
 
-write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Cleaned_data_from_Karolina_and_Morgane/FUNDER_clean_microarthropod_core_depths_2022.csv")
+write.csv(clean, "../Clean/FUNDER_clean_microarthropod_core_depths_2022.csv")
 ```
 
 
 FUNDER_raw_microbial_soil_sample_weights_2022.xlsx
 ```{r}
-raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_microbial_soil_sample_weights_2022.xlsx")
+raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_microbial_soil_sample_weights_2022.xlsx")
 head(raw)
 
 clean <- raw %>% 
@@ -79,8 +78,17 @@ write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Kar
 
 FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx
 ```{r}
-raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx")
-head(raw)
+
+
+raw <- data.frame(read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx", 
+                 col_types = c(rep("text", times = 4), 
+                 "numeric", 
+                 "text", 
+                 rep("numeric", times = 3),
+                 "text", 
+                 rep("numeric", times = 2),
+                 rep("text", times = 2))))
+str(raw); head(raw)
 
 clean <- raw %>% 
   mutate(siteID = recode(site, 
@@ -118,12 +126,28 @@ clean <- raw %>%
 head(clean)
 
 write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_litter_biomass_2021.xlsx")
+
+####
+
+litter.df <- data.frame("siteID"=raw$site, 
+                        "blockID"=raw$block, 
+                        "treatment"=raw$treatment,
+                        "plotID"=raw$plotID, 
+                        "pfg",
+                        "weight_g"=raw$site, 
+                        "native_litter",
+                        "addtion_site",
+                        "comments")
+
+
+
+
 ```
 
 
 FUNDER_raw_beforeburrying_tea_bags_2021.xlsx
 ```{r}
-raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2021.xlsx", col_types = c(rep("text", times = 5), "numeric", rep("date", times = 2))) # mind the two date columns
+raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2021.xlsx", col_types = c(rep("text", times = 5), "numeric", rep("date", times = 2))) # mind the two date columns
 str(raw)
 
 # clean
@@ -150,7 +174,8 @@ clean <- raw %>%
                                     c("gre" = "green", 
                                       "hib" = "rooibos_hibiscus"))) %>% 
   select(-site, -block) %>%
-  relocate(year, siteID, blockID, treatment, plotID, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+  relocate(year, siteID, blockID, treatment, plotID, tea_type, weight_g, 
+           burial_date, retrieval_date); head(clean)
 
 write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2021.csv")
 
@@ -164,14 +189,12 @@ clean %>%
 
 FUNDER_raw_beforeburrying_tea_bags_2022.xlsx
 ```{r}
-raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2022.xlsx", col_types = c(rep("guess", times = 6), "numeric", rep("date", times = 2))) # mind the two date columns
+raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2022.xlsx", col_types = c(rep("guess", times = 6), "numeric", rep("date", times = 2))) # mind the two date columns
 head(raw)
-
-# clean
 
 clean <- raw %>% 
   clean_names() %>% 
-  filter(!str_detect(site, "Substitu")) %>% 
+  #filter(!str_detect(site, "Substitu")) %>% 
   mutate(siteID = recode(site, 
                          'Gud' = "Gudmedalen",
                          'Lav' = "Lavisdalen",
@@ -191,15 +214,17 @@ clean <- raw %>%
          tea_type = tolower(tea_type), 
          tea_type = sub("roiboos", "rooibos", tea_type)) %>% 
   select(-site, -block) %>%
-  relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+  relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, 
+           weight_g, burial_date, retrieval_date) %>% 
+  rename(fresh_weight_g = weight_g); head(clean)
 
 write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv")
 ```
 
 
-FUNDER_raw_beforeburrying_tea_bags_2022.xlsx
+FUNDER_raw_fungal_necromass_start_weights_2022.xlsx
 ```{r}
-raw <- read_xlsx("C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx") # mind the two date columns
+raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx") 
 head(raw)
 
 # clean
@@ -228,7 +253,7 @@ clean <- raw %>%
   select(-site, -block) %>%
   relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, weight_g, burial_date, retrieval_date); head(clean)
 
-write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv")
+write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_fungal_necromass_start_weights_2022.csv")
 ```
 
 
