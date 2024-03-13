@@ -77,10 +77,9 @@ write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Kar
 
 
 FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx
-```{r}
+```{r fig.width=12}
 
-
-raw <- data.frame(read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx", 
+raw <- data.frame(read_xlsx("../Raw/FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx", sheet = "test_sheet",
                  col_types = c(rep("text", times = 4), 
                  "numeric", 
                  "text", 
@@ -90,8 +89,10 @@ raw <- data.frame(read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/
                  rep("text", times = 2))))
 str(raw); head(raw)
 
+# fix siteID and other variables, and pivot to long format: 
 clean <- raw %>% 
-  mutate(siteID = recode(site, 
+  rename(siteID = site, blockID = block) %>%
+  mutate(siteID = recode(siteID, 
                          'Gud' = "Gudmedalen",
                          'Lav' = "Lavisdalen",
                          'Ram' = "Rambera",
@@ -104,50 +105,49 @@ clean <- raw %>%
                          'Ovs' = "Ovstedalen",
                          'Vik' = "Vikesland",
                          'Ves' = "Veskre"), 
-         block = as.factor(block), 
+         block = as.factor(blockID), 
          native_graminoids = as.numeric(native_graminoids), 
          graminoids_before_burying = as.numeric(graminoids_before_burying)) %>% 
   mutate(year = "2022", .before = 1) %>% 
-  pivot_longer(cols = c(added_forbs, 
-                        added_graminoids),
-               values_to = "added", 
-               names_to = "functional_group") %>% 
-  pivot_longer(cols = c(native_forbs, 
-                        native_graminoids), 
-               values_to = "native", 
-               #names_to = "functional_group"
-               ) %>% 
-  pivot_longer(cols = c(forb_addition_site, 
-                        graminoid_addition_site), 
-               values_to = "addition_site", 
-               names_to = "functional_group")
+  pivot_longer(
+    cols = c(native_forbs, added_forbs, 
+             native_graminoids, added_graminoids),
+    names_to = c("native_or_added", 
+                 "plant_functional_group"), 
+    names_sep = "_", 
+    values_to = "weight_before_burying"
+  ) %>% 
+  select(siteID, blockID, treatment, plotID,
+         weight_before_burying, plant_functional_group, native_or_added) 
 
+# we need to keep our comments for future reference, but pivoting is a bit complicated.
+# instead, subset and reinsert comments to the relevant samples before joining dataframes: 
 
-head(clean)
+# 2 samples mixed up in Ulvehaugen: 
+ulvfg <- clean %>% filter(siteID=="Ulvehaugen", blockID!="1", treatment=="FG", plant_functional_group=="forbs", native_or_added=="native") %>% 
+  mutate(comments = "There were 2 Ulv2FG and 0 Ulv3FG in data sheet. Data were entered in random order so I chose arbitrarily one Ulv2FG to be Ulv3FG") 
 
-write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_litter_biomass_2021.xlsx")
+# actual weights lost in Veskre: 
+lostweight <- clean %>% 
+  filter(siteID=="Veskre", 
+         native_or_added=="native") %>% 
+  mutate(comments2 = "Weight is theoretical, the actual value was lost")
 
-####
-
-litter.df <- data.frame("siteID"=raw$site, 
-                        "blockID"=raw$block, 
-                        "treatment"=raw$treatment,
-                        "plotID"=raw$plotID, 
-                        "pfg",
-                        "weight_g"=raw$site, 
-                        "native_litter",
-                        "addtion_site",
-                        "comments")
-
-
-
-
+# join:
+clean <- clean %>% 
+  full_join(ulvfg) %>% 
+  full_join(lostweight) %>% 
+  unite(col = "comments", c(comments, comments2), na.rm = T) 
+  
+write.csv(clean, "../Clean/FUNDER_clean_beforeburrying_litter_biomass_2021.csv")
+#
 ```
 
 
 FUNDER_raw_beforeburrying_tea_bags_2021.xlsx
 ```{r}
-raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2021.xlsx", col_types = c(rep("text", times = 5), "numeric", rep("date", times = 2))) # mind the two date columns
+raw <- read_xlsx("../Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2021.xlsx", 
+                 col_types = c(rep("text", times = 5), "numeric", rep("date", times = 2))) # mind the two date columns
 str(raw)
 
 # clean
@@ -189,7 +189,8 @@ clean %>%
 
 FUNDER_raw_beforeburrying_tea_bags_2022.xlsx
 ```{r}
-raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2022.xlsx", col_types = c(rep("guess", times = 6), "numeric", rep("date", times = 2))) # mind the two date columns
+raw <- read_xlsx("../Raw/FUNDER_raw_beforeburrying_tea_bags_weight_2022.xlsx", 
+                 col_types = c(rep("guess", times = 6), "numeric", rep("date", times = 2))) # mind the two date columns
 head(raw)
 
 clean <- raw %>% 
@@ -218,42 +219,43 @@ clean <- raw %>%
            weight_g, burial_date, retrieval_date) %>% 
   rename(fresh_weight_g = weight_g); head(clean)
 
-write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv")
+write.csv(clean, "../Clean/FUNDER_clean_beforeburrying_tea_bags_weight_2022.csv", 
+          row.names = FALSE)
 ```
 
 
 FUNDER_raw_fungal_necromass_start_weights_2022.xlsx
 ```{r}
-raw <- read_xlsx("../Raw/Data/Datasets_from_Karolina_and_Morgane/Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx") 
-head(raw)
 
-# clean
+# load all sheets:
+raw1 <- read_xlsx("../Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx", sheet = 1,
+                 col_types = c("text", "numeric", "text")) 
 
-clean <- raw %>% 
+raw2 <- read_xlsx("../Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx", sheet = 2,
+                 col_types = c("text", "numeric", "text")) 
+
+raw3 <- read_xlsx("../Raw/FUNDER_raw_fungal_necromass_start_weights_2022.xlsx", sheet = 3) 
+
+# make fungal_species variable
+raw1 <- raw1 %>% 
+  mutate(fungal_species = "cenococcum_geophilus")
+
+raw2 <- raw2 %>% 
+  mutate(fungal_species = "suillus_variegatus")
+
+# join and clean dataset:
+clean <- full_join(raw1, raw2) %>% 
   clean_names() %>% 
-  filter(!str_detect(site, "Substitu")) %>% 
-  mutate(siteID = recode(site, 
-                         'Gud' = "Gudmedalen",
-                         'Lav' = "Lavisdalen",
-                         'Ram' = "Rambera",
-                         'Ulv' = "Ulvehaugen",
-                         'Skj' = "Skjelingahaugen",
-                         'Alr' = "Alrust",
-                         'Arh' = "Arhelleren",
-                         'Fau' = "Fauske",
-                         'Hog' = "Hogsete",
-                         'Ovs' = "Ovstedalen",
-                         'Vik' = "Vikesland",
-                         'Ves' = "Veskre"),
-         blockID = paste0(site, block), 
-         plotID = paste0(site, block, treatment),
-         year = "2022", 
-         tea_type = tolower(tea_type), 
-         tea_type = sub("roiboos", "rooibos", tea_type)) %>% 
-  select(-site, -block) %>%
-  relocate(year, siteID, blockID, treatment, plotID, replicate, tea_type, weight_g, burial_date, retrieval_date); head(clean)
+  mutate(dominant_fragment_size = recode(composition_category_see_separate_sheet, 
+                                    "1" = "small", 
+                                    "2" = "mixed",
+                                    "3" = "large")) %>% 
+  select(-composition_category_see_separate_sheet) %>%
+  relocate(tag_no, fungal_species, dominant_fragment_size, weight_g); head(clean)
 
-write.csv(clean, "C:/Users/pgfar/Dropbox/pgfarsund/FUNDER/Data/Datasets_from_Karolina_and_Morgane/Clean/FUNDER_clean_fungal_necromass_start_weights_2022.csv")
+write.csv(clean, "../Clean/FUNDER_clean_fungal_necromass_start_weights_2022.csv", 
+          row.names = FALSE)
+
 ```
 
 
