@@ -149,52 +149,64 @@ left_join(data.frame(siteID = c("Alrust", "Arhelleren", "Fauske",
 litter %>% 
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = mean_temp, y = rel_weight_loss, fill = mean_temp)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
+  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   scale_fill_brewer(palette = "Reds") + 
   theme_gray() + 
   ylab("Relative weight loss") +
-  xlab("Mean annual summer temperature") + 
-  theme(legend.position = "none") -> temperature
+  xlab("Degrees celsius") + 
+  theme(legend.position = "none") + 
+  ggtitle("Mean annual summer temperature") -> temperature; temperature
 
 litter %>% 
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = mean_precip, y = rel_weight_loss, fill = mean_precip)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
+  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   scale_fill_brewer(palette = "Blues") + 
   theme_gray() + 
-  ylab("Relative weight loss") +
-  xlab("Mean annual precipitation") + 
-  theme(legend.position = "none") -> precipitation
+  ylab(" ") +
+  xlab("Millimeter") + 
+  theme(legend.position = "none") +
+  ggtitle("Mean annual precipitation") -> precipitation; precipitation 
 
 litter %>% 
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = plant_functional_group, y = rel_weight_loss, fill = plant_functional_group)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
+  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   scale_fill_manual(values = c("darkorchid1", "chartreuse4")) + 
+  scale_x_discrete(labels = c("Forbs", "Graminoids")) +
   theme_gray() + 
   ylab("Relative weight loss") +
-  xlab("Litter type") + 
-  theme(legend.position = "none") -> litter.type
+  xlab(" ") + 
+  theme(legend.position = "none") +
+  ggtitle("Plant litter type") -> litter.type; litter.type
 
 litter %>% 
+  mutate(n_PFGs = stri_replace_all_regex(treatment,
+                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
+                                         vectorize = FALSE)) %>%
   filter(rel_weight_loss > 0) %>% 
-  ggplot(aes(x = factor(treatment, levels = c("C", "B", "F", "G", 
-                                              "FB", "GB", "GF", "FGB")), 
+  ggplot(aes(x = n_PFGs, 
              y = rel_weight_loss, 
-             fill = factor(treatment, levels = c("C", "B", "F", "G", 
-                                                 "FB", "GB", "GF", "FGB")))) +
+             fill = n_PFGs)) +
+  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
+  geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
   geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
-  geom_jitter(shape = 21, width = 0.2, size = 1.5, stroke = 1, alpha = 0.75) + 
-  #scale_fill_brewer(palette = "Greys") + 
-  scale_fill_manual(values = c("chartreuse3",
-                               rep()))
+  scale_fill_brewer(palette = rev("Greens"), direction = -1) + 
   theme_gray() + 
-  ylab("Relative weight loss") +
-  xlab("Litter type") + 
-  theme(legend.position = "none")
+  ylab(" ") +
+  xlab(" ") + 
+  theme(legend.position = "none") + 
+  ggtitle("Number of PFGs removed") -> pfg; pfg
+
+ggarrange(litter.type, pfg, temperature, precipitation, 
+          nrow = 2, ncol = 2) # 6 x 8
 #
 
 litter %>% 
@@ -225,6 +237,9 @@ litter %>%
   facet_grid(mean_temp~mean_precip) +
   xlab("treatment") -> site.specific.plot; site.specific.plot
 
+ggarrange(litter.type, pfg, temperature, precipitation, 
+          nrow = 2, ncol = 2)
+
 #
 library(ggpubr)
 litter %>% 
@@ -251,7 +266,20 @@ model.dataset <- litter2 %>%
                 treatment, 
                 plant_functional_group, 
                 mean_temp)
-mod <- glm(rel_weight_loss ~ mean_precip * mean_temp, data = model.dataset) # %>% stargazer(type = "text")
+
+model.dataset %>% 
+  mutate(n_PFGs = stri_replace_all_regex(treatment,
+                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
+                                         vectorize = FALSE)) -> model.dataset2
+
+mod <- glm(rel_weight_loss ~ plant_functional_group + n_PFGs + mean_temp + mean_precip, 
+           data = model.dataset2) # %>% stargazer(type = "text")
+
+
+
+mod <- glm(rel_weight_loss ~ plant_functional_group * mean_precip, 
+           data = model.dataset2) # %>% stargazer(type = "text")
 
 step_mod <- stepAIC(mod, direction = "backward")
 stargazer(mod, 
@@ -261,7 +289,75 @@ stargazer(mod,
 plot(allEffects(mod))
 plot(allEffects(step_mod))
 
-#calculate McFadden's R-squared for model
+#calculate pseudo R-squared for model
 stargazer(with(summary(mod), 1 - deviance/null.deviance), type = "text")
 stargazer(with(summary(step_mod), 1 - deviance/null.deviance), type = "text")
 
+#
+
+colnames(path.mod.dataset)
+fit <- glm(rel_weight_loss ~ plant_functional_group + treatment + mean_temp * mean_precip, 
+           data = model.dataset)
+summary(fit)
+plot(effects::allEffects(fit))
+
+fit <- glm(rel_weight_loss ~ treatment, 
+           data = model.dataset)
+summary(fit)
+plot(effects::allEffects(fit))
+
+
+
+
+
+
+##########
+
+
+# path analysis
+library(lavaan)
+library(semPlot)
+library(OpenMx)
+library(GGally)
+library(corrplot)
+library(stargazer)
+
+# we have to recode our exogenous variables to numeric so that they can be used
+# for path analysis: 
+path.mod.dataset <- model.dataset %>% 
+  mutate(temp = stri_replace_all_regex(mean_temp,
+                                       pattern = c("6.5", "8.5", "10.5"), 
+                                       replacement = c(6.5, 8.5, 10.5), 
+                                       vectorize = FALSE),
+         prec = stri_replace_all_regex(mean_precip,
+                                       pattern = c("700", "1400", "2100", "2800"), 
+                                       replacement = c(700, 1400, 2100, 2800), 
+                                       vectorize = FALSE),
+         n_PFGs = stri_replace_all_regex(treatment,
+                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         replacement = c(0, 1, 1, 1, 2, 2, 2, 3), 
+                                         vectorize = FALSE),
+         lit = stri_replace_all_regex(plant_functional_group,
+                                      pattern = c("forbs", "graminoids"), 
+                                      replacement = c(0, 1), 
+                                      vectorize = FALSE), 
+         temp = as.numeric(temp), 
+         prec = as.numeric(prec),
+         n_PFGs = as.numeric(n_PFGs),
+         lit = as.numeric(lit)) %>%
+  rename(wtl = rel_weight_loss) %>%
+  dplyr::select(wtl, temp, prec, n_PFGs, lit)
+
+# check correlations in the data:
+cor1 <- cor(path.mod.dataset); cor1
+corrplot(cor1)
+library(car)
+scatterplotMatrix(path.mod.dataset, smooth = FALSE)
+# build a path model:
+pathmod <- 'wtl ~ lit + n_PFGs + temp + prec'
+
+fit1 <- cfa(pathmod, data = path.mod.dataset) # fit a Confirmatory Factor Analysis (CFA)
+summary(fit1, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE) 
+
+semPaths(fit1, "std", layout = "tree", nCharNodes = 0, style = "lisrel", 
+         edge.label.cex = 1, )
