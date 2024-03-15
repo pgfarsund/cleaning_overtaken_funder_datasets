@@ -173,6 +173,10 @@ litter %>%
   ggtitle("Mean annual precipitation") -> precipitation; precipitation 
 
 litter %>% 
+  mutate(n_PFGs = stri_replace_all_regex(treatment,
+                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
+                                         vectorize = FALSE)) %>%
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = plant_functional_group, y = rel_weight_loss, fill = plant_functional_group)) +
   #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
@@ -184,6 +188,7 @@ litter %>%
   ylab("Relative weight loss") +
   xlab(" ") + 
   theme(legend.position = "none") +
+  facet_grid(.~n_PFGs) + 
   ggtitle("Plant litter type") -> litter.type; litter.type
 
 litter %>% 
@@ -195,7 +200,6 @@ litter %>%
   ggplot(aes(x = n_PFGs, 
              y = rel_weight_loss, 
              fill = n_PFGs)) +
-  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
   geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
   scale_fill_brewer(palette = rev("Greens"), direction = -1) + 
