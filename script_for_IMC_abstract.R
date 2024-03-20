@@ -1,6 +1,8 @@
 library(tidyverse)
 library(readxl)
 library(here)
+library(ggpubr)
+library(stringi)
 
 ### load weight before burying
 before_burying_raw <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx"), 
@@ -91,7 +93,7 @@ after_burying_raw <- data.frame(read_xlsx(here("Raw", "FUNDER_mass_loss_2022.xls
                                           col_types = c(rep("text", times = 4), 
                                                         "date",
                                                         rep("numeric", times = 6),
-                                                        rep("text", times = 2)))); str(after_burying)
+                                                        rep("text", times = 2)))); str(after_burying_raw)
 # tidy up site and block IDs
 after_burying_raw %>% 
   rename(siteID = site, 
@@ -174,26 +176,33 @@ litter %>%
 
 litter %>% 
   mutate(n_PFGs = stri_replace_all_regex(treatment,
-                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         pattern = c("FGB", "FB", "GB", "GF", 
+                                                     "B", "F", "G", "C"), 
                                          replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
                                          vectorize = FALSE)) %>%
   filter(rel_weight_loss > 0) %>% 
-  ggplot(aes(x = plant_functional_group, y = rel_weight_loss, fill = plant_functional_group)) +
-  #geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
-  geom_jitter(shape = 21, width = 0.25, size = 1.5, stroke = 1, alpha = 0.75) + 
-  geom_boxplot(outlier.shape = NA, alpha = 0.5, linewidth = 1.25) + 
+  ggplot(aes(x = factor(treatment, levels = c("C", "B", "F", "G",
+                                             "FB", "GB", "GF", "FGB")), 
+             #x = n_PFGs,
+             y = rel_weight_loss, 
+             fill = plant_functional_group, shape = plant_functional_group)) +
+  scale_shape_manual(values = c(21, 24)) +
+  geom_jitter(width = 0.05, size = 2.5, stroke = 0.5, alpha = 0.5) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.75, linewidth = 1.25, width = 0.5, position = position_dodge(0.8)) + 
   scale_fill_manual(values = c("darkorchid1", "chartreuse4")) + 
-  scale_x_discrete(labels = c("Forbs", "Graminoids")) +
-  theme_gray() + 
+  #scale_x_discrete(labels = c("Forbs", "Graminoids")) +
+  #scale_x_discrete(labels = c("0 (C)", "1 (F, G, B)", "2 (FB, GB, FG)", "3 (FGB)")) + 
+  theme_gray(base_size = 15) + 
   ylab("Relative weight loss") +
-  xlab(" ") + 
-  theme(legend.position = "none") +
-  facet_grid(.~n_PFGs) + 
+  xlab("Number of PFGs removed") + 
+  theme(legend.position = "right", 
+        legend.title = element_blank()) +
   ggtitle("Plant litter type") -> litter.type; litter.type
 
 litter %>% 
   mutate(n_PFGs = stri_replace_all_regex(treatment,
-                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         pattern = c("FGB", "FB", "GB", "GF", 
+                                                     "B", "F", "G", "C"), 
                                          replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
                                          vectorize = FALSE)) %>%
   filter(rel_weight_loss > 0) %>% 
@@ -207,6 +216,7 @@ litter %>%
   ylab(" ") +
   xlab(" ") + 
   theme(legend.position = "none") + 
+  facet_grid(mean_temp~mean_precip) +
   ggtitle("Number of PFGs removed") -> pfg; pfg
 
 ggarrange(litter.type, pfg, temperature, precipitation, 
@@ -273,7 +283,8 @@ model.dataset <- litter2 %>%
 
 model.dataset %>% 
   mutate(n_PFGs = stri_replace_all_regex(treatment,
-                                         pattern = c("FGB", "FB", "GB", "GF", "B", "F", "G", "C"), 
+                                         pattern = c("FGB", "FB", "GB", "GF", 
+                                                     "B", "F", "G", "C"), 
                                          replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
                                          vectorize = FALSE)) -> model.dataset2
 
@@ -312,8 +323,49 @@ plot(effects::allEffects(fit))
 
 
 
+miclim <- read.csv("~/Downloads/FUNDER_clean_microclimate_2022.csv")
 
+str(miclim)
+str(litter)
+miclim %>% 
+  select(-blockID) -> miclim
+left_join(miclim, litter, 
+          by = join_by(siteID, plotID, treatment), 
+          relationship = "many-to-many") -> df
 
+str(df)
+
+df %>% 
+  filter(variable=="soilmoisture") -> df2
+
+df2 %>% 
+  ggplot(aes(x=rel_weight_loss)) + 
+  geom_histogram()
+  ggplot(aes(x=value, y=rel_weight_loss)) + 
+  geom_point() +
+  geom_smooth(method = "lm")
+
+loi %>% 
+  select(-blockID) -> loi
+
+left_join(litter, loi, by = join_by(siteID, treatment, plotID)) -> litloi
+
+litloi %>% 
+  mutate(n_PFGs = stri_replace_all_regex(treatment,
+                                         pattern = c("FGB", "FB", "GB", "GF", 
+                                                     "B", "F", "G", "C"), 
+                                         replacement = c(3, 2, 2, 2, 1, 1, 1, 0), 
+                                         vectorize = FALSE)) %>%
+  filter(rel_weight_loss > 0, 
+         variable == "organic_matter") %>%
+  ggplot(aes(x=value, y=rel_weight_loss, color=n_PFGs, fill=n_PFGs)) + 
+  geom_point(shape = 21, size = 3) +
+  #scale_color_brewer(palette = "Greens") +
+  scale_color_manual(values = rep("black", times = 4)) +
+  scale_fill_brewer(palette = "Greens") +
+  geom_smooth(method = "lm") + 
+  facet_grid(mean_temp~n_PFGs) + 
+  theme_bw()
 
 ##########
 
