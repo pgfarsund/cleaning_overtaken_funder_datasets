@@ -5,7 +5,7 @@ library(tidyverse) # for data manipulation
 # load weight before burying:
 before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx"),
   sheet = "clean_sheet", # select correct sheet
-  col_types = c( # set appropriate variable types for each column in the excel sheet
+  col_types = c( # set correct variable types for each column in the excel sheet
     rep("text", times = 4),
     "numeric",
     "text",
@@ -53,11 +53,11 @@ before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_li
   mutate(weight_before_burying = round(weight_before_burying, 5)) %>%
   # select columns to keep
   select(
-    siteID, # ID for each site
-    blockID, # ID for each block
-    treatment, #
-    plotID,
-    weight_before_burying,
+    siteID, 
+    blockID, 
+    treatment, 
+    plotID, 
+    weight_before_burying, 
     litter_type,
     native_or_added,
     forb_comments_before,
@@ -77,7 +77,6 @@ after_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_mass_loss_2022.xlsx"),
   # correct siteID and blockID variable names
   rename(
     siteID = site,
-    #blockID = block
   ) %>%
   # recode the ID of every site
   mutate(
@@ -110,6 +109,7 @@ after_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_mass_loss_2022.xlsx"),
     names_to = "litter_type",
     values_to = "weight_after_burying"
   ) %>%
+  mutate(weight_after_burying = round(weight_after_burying, 5)) %>%
   # select columns to keep
   select(siteID, blockID, treatment, plotID, litter_type, weight_after_burying) -> after_burying
 
@@ -118,14 +118,14 @@ litter <- left_join(
   x = before_burying,
   y = after_burying
 ) %>%
-  # calculate weight loss and add relative weight loss as a variable
+  # calculate weight loss and  relative weight loss
   mutate(
-    weight_loss = weight_before_burying - weight_after_burying, # make a cloumn for weight loss
-    rel_weight_loss = weight_loss / weight_before_burying, # make a column for relative weight loss
+    weight_loss = round(x = c(weight_before_burying - weight_after_burying), 5), # make a cloumn for weight loss
+    rel_weight_loss = round(x = c(weight_loss / weight_before_burying), 5), # make a column for relative weight loss
     rel_weight_loss = gsub(-Inf, NA, rel_weight_loss), # replace "-Inf" with NA (converts column to character)
     rel_weight_loss = as.numeric(rel_weight_loss) # convert column back to numeric
   ) %>%
-  # add mean annual summer temperature and mean annual precipittion via left_join by siteID (alphabetically)
+  # add mean annual summer temperature and mean annual precipition via left_join by siteID (alphabetically)
   left_join(data.frame(
     siteID = c(
       "Alrust",
@@ -142,41 +142,19 @@ litter <- left_join(
       "Vikesland"
     ),
     mean_temp = factor(c(
-      8.5,
-      10.5,
-      10.5,
-      6.5,
-      8.5,
-      6.5,
-      10.5,
-      8.5,
-      6.5,
-      6.5,
-      8.5,
-      10.5
+      8.5, 10.5, 10.5, 6.5, 8.5, 6.5,
+      10.5, 8.5, 6.5, 6.5, 8.5, 10.5
     )),
     mean_precip = factor(c(
-      700,
-      2100,
-      700,
-      2100,
-      1400,
-      1400,
-      2800,
-      2100,
-      2800,
-      700,
-      2800,
-      1400
+      700, 2100, 700, 2100, 1400, 1400,
+      2800, 2100, 2800, 700, 2800, 1400
     ))
   )) %>%
   # select variables to keep
   select(
     siteID, blockID, treatment, plotID,
-    litter_type, native_or_added, rel_weight_loss
+    litter_type, native_or_added, rel_weight_loss, 
+    mean_precip, mean_temp
   )
 
-lit2 <- litter %>% 
-  filter(rel_weight_loss > 0)
-sort(table(lit2$siteID))
 
