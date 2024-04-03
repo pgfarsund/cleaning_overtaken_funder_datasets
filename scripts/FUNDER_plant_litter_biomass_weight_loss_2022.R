@@ -1,3 +1,8 @@
+
+# fix this before uploading to github and OSF: 
+# 1. year and date of burial and retrieval
+# 2. implement "target" data pipeline tool (see one of Aud's scripts on Funder github)
+
 library(here) # for locating files
 library(readxl) # for reading excel sheets
 library(tidyverse) # for data manipulation
@@ -53,11 +58,11 @@ before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_li
   mutate(weight_before_burying = round(weight_before_burying, 5)) %>%
   # select columns to keep
   select(
-    siteID, 
-    blockID, 
-    treatment, 
-    plotID, 
-    weight_before_burying, 
+    siteID,
+    blockID,
+    treatment,
+    plotID,
+    weight_before_burying,
     litter_type,
     native_or_added,
     forb_comments_before,
@@ -153,8 +158,9 @@ litter <- left_join(
   # select variables to keep
   select(
     siteID, blockID, treatment, plotID,
-    litter_type, native_or_added, rel_weight_loss, 
+    litter_type, native_or_added, rel_weight_loss,
     mean_precip, mean_temp
   )
 
-
+neg <- litter %>%
+  filter(rel_weight_loss < 0)
