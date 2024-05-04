@@ -147,7 +147,7 @@ left_join(data.frame(siteID = c("Alrust", "Arhelleren", "Fauske",
                                      2800, 2100, 2800,
                                      700, 2800, 1400))))
 
-#
+# temperature plot
 litter %>% 
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = mean_temp, y = rel_weight_loss, fill = mean_temp)) +
@@ -161,6 +161,7 @@ litter %>%
   theme(legend.position = "none") + 
   ggtitle("Mean annual summer temperature") -> temperature; temperature
 
+# precipitation plot
 litter %>% 
   filter(rel_weight_loss > 0) %>% 
   ggplot(aes(x = mean_precip, y = rel_weight_loss, fill = mean_precip)) +

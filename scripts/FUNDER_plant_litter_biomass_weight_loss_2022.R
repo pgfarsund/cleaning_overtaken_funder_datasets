@@ -6,6 +6,9 @@
 library(here) # for locating files
 library(readxl) # for reading excel sheets
 library(tidyverse) # for data manipulation
+library(targets)
+
+use_targets()
 
 # load weight before burying:
 before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx"),
@@ -161,6 +164,3 @@ litter <- left_join(
     litter_type, native_or_added, rel_weight_loss,
     mean_precip, mean_temp
   )
-
-neg <- litter %>%
-  filter(rel_weight_loss < 0)
