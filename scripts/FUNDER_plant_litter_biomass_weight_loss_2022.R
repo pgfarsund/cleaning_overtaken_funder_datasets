@@ -1,14 +1,11 @@
 
 # fix this before uploading to github and OSF: 
-# 1. year and date of burial and retrieval
-# 2. implement "target" data pipeline tool (see one of Aud's scripts on Funder github)
+# 1. implement "target" data pipeline tool (see one of Aud's scripts on Funder github)
 
 library(here) # for locating files
 library(readxl) # for reading excel sheets
 library(tidyverse) # for data manipulation
-library(targets)
-
-use_targets()
+library(targets) # still haven't figured this one out yet
 
 # load weight before burying:
 before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_litter_biomass_2021.xlsx"),
@@ -133,6 +130,7 @@ litter <- left_join(
     rel_weight_loss = gsub(-Inf, NA, rel_weight_loss), # replace "-Inf" with NA (converts column to character)
     rel_weight_loss = as.numeric(rel_weight_loss) # convert column back to numeric
   ) %>%
+  left_join(litter_bag_burial_and_retrieval_dates) %>% # add burial and retrieval dates for litter bags in each site
   # add mean annual summer temperature and mean annual precipition via left_join by siteID (alphabetically)
   left_join(data.frame(
     siteID = c(
@@ -160,7 +158,10 @@ litter <- left_join(
   )) %>%
   # select variables to keep
   select(
-    siteID, blockID, treatment, plotID,
+    siteID, blockID, treatment, plotID, 
+    burial_date, retrieval_date,
     litter_type, native_or_added, rel_weight_loss,
     mean_precip, mean_temp
-  )
+  ) 
+
+write.csv(litter, "~/Desktop/litter.csv")
