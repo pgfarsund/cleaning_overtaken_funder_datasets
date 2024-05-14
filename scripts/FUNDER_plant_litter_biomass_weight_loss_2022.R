@@ -130,8 +130,7 @@ litter <- left_join(
     rel_weight_loss = gsub(-Inf, NA, rel_weight_loss), # replace "-Inf" with NA (converts column to character)
     rel_weight_loss = as.numeric(rel_weight_loss) # convert column back to numeric
   ) %>%
-  left_join(litter_bag_burial_and_retrieval_dates) %>% # add burial and retrieval dates for litter bags in each site
-  # add mean annual summer temperature and mean annual precipition via left_join by siteID (alphabetically)
+  # add mean annual summer temperature, mean annual precipition, and dates of retrieval and burial, via left_join by siteID (alphabetically)
   left_join(data.frame(
     siteID = c(
       "Alrust",
@@ -154,6 +153,16 @@ litter <- left_join(
     mean_precip = factor(c(
       700, 2100, 700, 2100, 1400, 1400,
       2800, 2100, 2800, 700, 2800, 1400
+    )), 
+    burial_date = factor(c(
+      "2021-08-05", "2021-08-19", "2021-08-04", "2021-08-10", 
+      "2021-08-11", "2021-08-12", "2021-08-13", "2021-08-17", 
+      "2021-08-16", "2021-08-06", "2021-08-18", "2021-08-09"
+    )), 
+    retrieval_date = factor(c(
+      "2022-08-24", "2022-08-31", "2022-08-25", "2022-09-06", 
+      "2022-08-23", "2022-09-05", "2022-08-29", "2022-09-01", 
+      "2022-09-08", "2022-09-07", "2022-08-30", "2022-08-22"
     ))
   )) %>%
   # select variables to keep
