@@ -172,5 +172,3 @@ litter <- left_join(
     litter_type, native_or_added, rel_weight_loss,
     mean_precip, mean_temp
   ) 
-
-write.csv(litter, "~/Desktop/litter.csv")
