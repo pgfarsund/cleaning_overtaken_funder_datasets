@@ -55,6 +55,8 @@ before_burying <- data.frame(read_xlsx(here("Raw", "FUNDER_raw_beforeburrying_li
     names_sep = "_",
     values_to = "weight_before_burying"
   ) %>%
+  # filter out rows with 0 grams of litter before burying
+  filter(weight_before_burying > 0) %>%
   mutate(weight_before_burying = round(weight_before_burying, 5)) %>%
   # select columns to keep
   select(
@@ -127,8 +129,8 @@ litter <- left_join(
   mutate(
     weight_loss = round(x = c(weight_before_burying - weight_after_burying), 5), # make a cloumn for weight loss
     rel_weight_loss = round(x = c(weight_loss / weight_before_burying), 5), # make a column for relative weight loss
-    rel_weight_loss = gsub(-Inf, NA, rel_weight_loss), # replace "-Inf" with NA (converts column to character)
-    rel_weight_loss = as.numeric(rel_weight_loss) # convert column back to numeric
+    #rel_weight_loss = gsub(-Inf, NA, rel_weight_loss), # replace "-Inf" with NA (converts column to character)
+    #rel_weight_loss = as.numeric(rel_weight_loss) # convert column back to numeric
   ) %>%
   # add mean annual summer temperature, mean annual precipition, and dates of retrieval and burial, via left_join by siteID (alphabetically)
   left_join(data.frame(
@@ -172,3 +174,4 @@ litter <- left_join(
     litter_type, native_or_added, rel_weight_loss,
     mean_precip, mean_temp
   ) 
+
