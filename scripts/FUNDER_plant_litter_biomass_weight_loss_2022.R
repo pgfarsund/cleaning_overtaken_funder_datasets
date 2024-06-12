@@ -175,3 +175,6 @@ litter <- left_join(
     mean_precip, mean_temp
   ) 
 
+litter %>% filter(rel_weight_loss!="NA") %>% 
+  ggplot(aes(x=rel_weight_loss)) + 
+  geom_histogram()
